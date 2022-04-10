@@ -57,10 +57,12 @@ void print_UTC_time(void)
 	// The Nordic Date-Time library will set the zephyr operating system time, 
 	// hence we can use standard POSIX functions to display time.
 	struct timespec tp;
+	struct tm timeinfo;
 	char buf[50];
 
 	if (clock_gettime(CLOCK_REALTIME, &tp) == 0) {
-		printk("UTC Time: %s", ctime_r((const time_t *)&tp, buf));
+		gmtime_r(&tp, &timeinfo);
+		printk("UTC Time: %s", asctime_r(&timeinfo, buf));
 	} else {
 		printk("Error obtaining time\n");
 	}
@@ -113,7 +115,7 @@ void main(void)
 	// LTE is connected. The event handler will show when we be obtain a time fix.
 	date_time_register_handler(date_time_event_handler);
 
-#if 1
+
 	printk("Waiting for network... ");
 	err = lte_lc_init_and_connect();
 	if (err) {
@@ -125,24 +127,12 @@ void main(void)
 	print_modem_info(MODEM_INFO_IP_ADDRESS);
 	//print_modem_info(MODEM_INFO_DATE_TIME);
 	//print_modem_info(MODEM_INFO_RSRP);
-#endif
 
-	// Wait for device to obtain an initial valid date time
-	//while (!date_time_is_valid());
-
-	int64_t ts;
-	
 	while (1) {
 
-		err = date_time_now(&ts);
-		printk("Timestamp: ");
-		if (err == -ENODATA) {
-			printk("No valid date/time\n");
-		} else if (err) {
-			printk("Error %d obtaining date/time\n",err);
-		} else { 
-			printk("%llu\n", ts);
-		}
+		/* 
+		 * Do something here
+		 */ 
 
 		k_msleep(1000);
 	}
