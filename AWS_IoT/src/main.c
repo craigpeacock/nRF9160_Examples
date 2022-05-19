@@ -44,41 +44,51 @@ void main(void)
 
 	cJSON_Init();
 
+	// This example supports Amazon Web Services firmware over-the-air (AWS FOTA)
+	// Update. Check update status, if FW update has just occured.
 	nrf_modem_lib_dfu_handler();
 
+	// Initialise Amazon Web Services IoT Module
 	err = aws_iot_init(NULL, aws_iot_event_handler);
 	if (err) {
 		printk("AWS IoT library could not be initialized, error: %d\n", err);
 	}
 
-	/** Subscribe to customizable non-shadow specific topics
-	 *  to AWS IoT backend.
-	 */
+	// Subscribe to customizable non-shadow specific topics.
+	// Topics will be subscribed to upon connection to AWS IoT broker.
 	err = app_topics_subscribe();
 	if (err) {
 		printk("Adding application specific topics failed, error: %d\n", err);
 	}
 
-	work_init();
-
+	// Initialise Workqueue Threads 
+	// Thread connect_work is responsible for connecting and reconnecting to the 
+	// AWS IoT broker.
+	k_work_init_delayable(&connect_work, connect_work_fn);
+	// Thread shadow_update_version_work only publishes a message (with version 
+	// number) upon an initial connection. 
+	k_work_init(&shadow_update_version_work, shadow_update_version_work_fn);
+	// Thread shadow_update_work continues to periodically publish a message 
+	// (without version number)
+	k_work_init_delayable(&shadow_update_work, shadow_update_work_fn);
+		
+	// Initialise LTE modem and LTE handler callback
 	modem_configure();
 
+	// Initialise modem information module
 	err = modem_info_init();
 	if (err) {
 		printk("Failed initializing modem info module, error: %d\n", err);
 	}
 
+	// Wait for LTE modem to connect 
 	k_sem_take(&lte_connected, K_FOREVER);
 
+	// Update date & time
 	date_time_update_async(date_time_event_handler);
-	k_work_schedule(&connect_work, K_NO_WAIT);
-}
 
-void work_init(void)
-{
-	k_work_init_delayable(&shadow_update_work, shadow_update_work_fn);
-	k_work_init_delayable(&connect_work, connect_work_fn);
-	k_work_init(&shadow_update_version_work, shadow_update_version_work_fn);
+	// Initiate connection to AWS IoT MQTT 
+	k_work_schedule(&connect_work, K_NO_WAIT);
 }
 
 void connect_work_fn(struct k_work *work)
@@ -89,16 +99,15 @@ void connect_work_fn(struct k_work *work)
 		return;
 	}
 
+	// Connect to AWS IoT broker (MQTT)
 	err = aws_iot_connect(NULL);
 	if (err) {
 		printk("aws_iot_connect, error: %d\n", err);
 	}
 
-	printk("Next connection retry in %d seconds\n",
-	       CONFIG_CONNECTION_RETRY_TIMEOUT_SECONDS);
+	printk("Next connection retry in %d seconds\n", CONFIG_CONNECTION_RETRY_TIMEOUT_SECONDS);
 
-	k_work_schedule(&connect_work,
-			K_SECONDS(CONFIG_CONNECTION_RETRY_TIMEOUT_SECONDS));
+	k_work_schedule(&connect_work, K_SECONDS(CONFIG_CONNECTION_RETRY_TIMEOUT_SECONDS));
 }
 
 void shadow_update_work_fn(struct k_work *work)
@@ -109,22 +118,22 @@ void shadow_update_work_fn(struct k_work *work)
 		return;
 	}
 
+	// Update shadow with-out version number (Type 1)
 	err = shadow_update(false);
 	if (err) {
 		printk("shadow_update, error: %d\n", err);
 	}
 
-	printk("Next data publication in %d seconds\n",
-	       CONFIG_PUBLICATION_INTERVAL_SECONDS);
+	printk("Next data publication in %d seconds\n", CONFIG_PUBLICATION_INTERVAL_SECONDS);
 
-	k_work_schedule(&shadow_update_work,
-			K_SECONDS(CONFIG_PUBLICATION_INTERVAL_SECONDS));
+	k_work_schedule(&shadow_update_work, K_SECONDS(CONFIG_PUBLICATION_INTERVAL_SECONDS));
 }
 
 void shadow_update_version_work_fn(struct k_work *work)
 {
 	int err;
 
+	// Update shadow with version number (Type 2)
 	err = shadow_update(true);
 	if (err) {
 		printk("shadow_update, error: %d\n", err);
