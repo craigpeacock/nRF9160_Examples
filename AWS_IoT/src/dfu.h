@@ -1,0 +1,1 @@
+void nrf_modem_lib_dfu_handler(void);

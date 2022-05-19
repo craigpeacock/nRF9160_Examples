@@ -1,0 +1,1 @@
+void date_time_event_handler(const struct date_time_evt *evt);
