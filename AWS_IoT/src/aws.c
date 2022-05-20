@@ -15,6 +15,8 @@
 #include "aws.h"
 #include "main.h"
 
+#define AWS_IOT_PUB_CUSTOM_TOPIC "my-custom-topic/status"
+
 int app_topics_subscribe(void)
 {
 	int err;
@@ -118,6 +120,57 @@ cleanup:
 	return err;
 }
 
+int publish_custom_topic(void)
+{
+	int err;
+	char *message;
+
+	cJSON *root_obj = cJSON_CreateObject();
+
+	if (root_obj == NULL) {
+		cJSON_Delete(root_obj);
+		err = -ENOMEM;
+		return err;
+	}
+
+	err = json_add_number(root_obj, "Test", 1);
+	
+	if (err) {
+		printk("json_add, error: %d\n", err);
+		goto cleanup;
+	}
+
+	message = cJSON_Print(root_obj);
+	if (message == NULL) {
+		printk("cJSON_Print, error: returned NULL\n");
+		err = -ENOMEM;
+		goto cleanup;
+	}
+
+	struct aws_iot_data tx_data = {
+		.qos = MQTT_QOS_0_AT_MOST_ONCE,
+		.topic.str = AWS_IOT_PUB_CUSTOM_TOPIC,
+		.topic.len = strlen(AWS_IOT_PUB_CUSTOM_TOPIC),
+		.ptr = message,
+		.len = strlen(message)
+	};
+
+	printk("Publishing: %s to AWS IoT broker\n", message);
+
+	err = aws_iot_send(&tx_data);
+	if (err) {
+		printk("aws_iot_send, error: %d\n", err);
+	}
+
+	cJSON_FreeString(message);
+
+cleanup:
+
+	cJSON_Delete(root_obj);
+
+	return err;
+}
+
 void print_received_data(const char *buf, const char *topic, size_t topic_len)
 {
 	char *str = NULL;
@@ -146,6 +199,8 @@ clean_exit:
 
 void aws_iot_event_handler(const struct aws_iot_evt *const evt)
 {
+	int err;
+
 	switch (evt->type) {
 		case AWS_IOT_EVT_CONNECTING:
 			printk("AWS_IOT_EVT_CONNECTING\n");
@@ -180,15 +235,14 @@ void aws_iot_event_handler(const struct aws_iot_evt *const evt)
 
 			/** Start sequential shadow data updates.
 			 */
-			k_work_schedule(&shadow_update_work,
-					K_SECONDS(CONFIG_PUBLICATION_INTERVAL_SECONDS));
+			k_work_schedule(&shadow_update_work, K_SECONDS(CONFIG_PUBLICATION_INTERVAL_SECONDS));
 
-	#if defined(CONFIG_NRF_MODEM_LIB)
-			int err = lte_lc_psm_req(true);
+#ifdef PSM_ENABLED
+			err = lte_lc_psm_req(true);
 			if (err) {
 				printk("Requesting PSM failed, error: %d\n", err);
 			}
-	#endif
+#endif
 			break;
 
 		case AWS_IOT_EVT_READY:
