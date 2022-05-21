@@ -16,22 +16,27 @@
 #include "main.h"
 
 #define AWS_IOT_PUB_CUSTOM_TOPIC "my-custom-topic/status"
+#define AWS_IOT_SUB_CUSTOM_TOPIC "my-custom-topic/set"
 
 int app_topics_subscribe(void)
 {
 	int err;
-	static char custom_topic[75] = "my-custom-topic/example";
-	static char custom_topic_2[75] = "my-custom-topic/example_2";
+
+	// Connection made to AWS IoT Broker is using a persistent session. 
+	// This means the broker will store subscriptions. Any topic name 
+	// modifications may not become active until the persistant connection 
+	// session expiration time elapses.
+	// https://docs.aws.amazon.com/iot/latest/developerguide/mqtt.html#mqtt-persistent-sessions
 
 	const struct aws_iot_topic_data topics_list[APP_TOPICS_COUNT] = {
-		[0].str = custom_topic,
-		[0].len = strlen(custom_topic),
-		[1].str = custom_topic_2,
-		[1].len = strlen(custom_topic_2)
+		[0].str = AWS_IOT_SUB_CUSTOM_TOPIC,
+		[0].len = strlen(AWS_IOT_SUB_CUSTOM_TOPIC)
+		// Additional topics can been appended here
+		// [1].str = custom_topic_2,
+		// [1].len = strlen(custom_topic_2)
 	};
 
-	err = aws_iot_subscription_topics_add(topics_list,
-					      ARRAY_SIZE(topics_list));
+	err = aws_iot_subscription_topics_add(topics_list, ARRAY_SIZE(topics_list));
 	if (err) {
 		printk("aws_iot_subscription_topics_add, error: %d\n", err);
 	}
