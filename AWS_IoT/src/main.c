@@ -39,6 +39,8 @@ bool cloud_connected;
 void main(void)
 {
 	int err;
+	char modem_IMEI[16];
+	struct aws_iot_config aws_config;
 
 	printk("The AWS IoT sample started, version: %s\n", CONFIG_APP_VERSION);
 
@@ -48,8 +50,37 @@ void main(void)
 	// Update. Check update status, if FW update has just occured.
 	nrf_modem_lib_dfu_handler();
 
+	// Initialise modem information module. Used to request battery voltage data 
+	// from the modem
+	err = modem_info_init();
+	if (err) {
+		printk("Failed initializing modem info module, error: %d\n", err);
+	}
+
+	// Obtain the modems' IMEI (International Mobile Equipment Identity). We use
+	// this as the client ID (thing ID) when communicating with the AWS IoT Broker
+	int len = modem_info_string_get(MODEM_INFO_IMEI, modem_IMEI, 16);
+	if (len > 0) {
+		printk("IMEI: %s\n",modem_IMEI);
+	}
+
+	// The AWS IOT Client ID should match the 'Thing Name' on the 
+	// AWS IoT console. It can be set in the prj.conf using: 
+	// CONFIG_AWS_IOT_CLIENT_ID_STATIC="<Thing Name>" 
+	// or at run time using the aws_iot_config structure passed 
+	// to aws_iot_connect(); If using this option, set 
+	// CONFIG_AWS_IOT_CLIENT_ID_APP=y
+	
+	// Setting the Client ID at runtime allows the developer to 
+	// easly deploy fleets of devices with the same firmware. 
+	// In this case we read the modem's IMEI and use this as
+	// the Client ID.
+
+	aws_config.client_id = modem_IMEI;
+	aws_config.client_id_len = sizeof(modem_IMEI);
+
 	// Initialise Amazon Web Services IoT Module
-	err = aws_iot_init(NULL, aws_iot_event_handler);
+	err = aws_iot_init(&aws_config, aws_iot_event_handler);
 	if (err) {
 		printk("AWS IoT library could not be initialized, error: %d\n", err);
 	}
@@ -74,12 +105,6 @@ void main(void)
 		
 	// Initialise LTE modem and LTE handler callback
 	modem_configure();
-
-	// Initialise modem information module
-	err = modem_info_init();
-	if (err) {
-		printk("Failed initializing modem info module, error: %d\n", err);
-	}
 
 	// Wait for LTE modem to connect 
 	k_sem_take(&lte_connected, K_FOREVER);
