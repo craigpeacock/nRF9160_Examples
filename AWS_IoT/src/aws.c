@@ -216,6 +216,39 @@ clean_exit:
 	cJSON_Delete(root_obj);
 }
 
+void process_received_data(const char *buf, const char *topic, size_t topic_len)
+{
+	printk("topic = [%s] len = %d\n", topic, topic_len);
+
+	if(strncmp(topic, AWS_IOT_SUB_CUSTOM_TOPIC, topic_len) == 0) {
+		printk("Found AWS_IOT_SUB_CUSTOM_TOPIC, Parsing\n");
+		process_custom_topic(buf, topic, topic_len);
+	}
+}
+
+void process_custom_topic(const char *buf, const char *topic, size_t topic_len)
+{
+	cJSON *root_obj = NULL;
+
+	int reset;
+
+	root_obj = cJSON_Parse(buf);
+	if (root_obj == NULL) {
+    	printk("cJSON Parse failure");
+    	return;
+	}
+
+	if (cJSON_HasObjectItem(root_obj, "reset")) {
+
+		cJSON *item = NULL;
+		item = cJSON_GetObjectItem(root_obj, "reset");
+		reset = cJSON_GetNumberValue(item);
+		printk("Reset = %d\n",reset);
+	}
+
+	cJSON_Delete(root_obj);
+}
+
 void aws_iot_event_handler(const struct aws_iot_evt *const evt)
 {
 	int err;
@@ -282,8 +315,8 @@ void aws_iot_event_handler(const struct aws_iot_evt *const evt)
 
 		case AWS_IOT_EVT_DATA_RECEIVED:
 			printk("AWS_IOT_EVT_DATA_RECEIVED\n");
-			print_received_data(evt->data.msg.ptr, evt->data.msg.topic.str,
-						evt->data.msg.topic.len);
+			print_received_data(evt->data.msg.ptr, evt->data.msg.topic.str,	evt->data.msg.topic.len);
+			process_received_data(evt->data.msg.ptr, evt->data.msg.topic.str, evt->data.msg.topic.len);
 			break;
 
 		case AWS_IOT_EVT_FOTA_START:
