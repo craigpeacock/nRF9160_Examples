@@ -218,18 +218,21 @@ clean_exit:
 
 void process_received_data(const char *buf, const char *topic, size_t topic_len)
 {
-	printk("topic = [%s] len = %d\n", topic, topic_len);
-
+	// topic may not be null terminated, so need to use topic_len;	
 	if(strncmp(topic, AWS_IOT_SUB_CUSTOM_TOPIC, topic_len) == 0) {
-		printk("Found AWS_IOT_SUB_CUSTOM_TOPIC, Parsing\n");
+		//printk("Found AWS_IOT_SUB_CUSTOM_TOPIC\n");
 		process_custom_topic(buf, topic, topic_len);
 	}
 }
 
 void process_custom_topic(const char *buf, const char *topic, size_t topic_len)
 {
-	cJSON *root_obj = NULL;
+	// Parses a payload with the following format:
+	// {
+  	//		"reset": 1
+	// }
 
+	cJSON *root_obj = NULL;
 	int reset;
 
 	root_obj = cJSON_Parse(buf);
@@ -239,7 +242,6 @@ void process_custom_topic(const char *buf, const char *topic, size_t topic_len)
 	}
 
 	if (cJSON_HasObjectItem(root_obj, "reset")) {
-
 		cJSON *item = NULL;
 		item = cJSON_GetObjectItem(root_obj, "reset");
 		reset = cJSON_GetNumberValue(item);
