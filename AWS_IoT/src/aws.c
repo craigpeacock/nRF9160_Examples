@@ -15,6 +15,8 @@
 #include "aws.h"
 #include "main.h"
 
+#define PSM_ENABLED
+
 #define AWS_IOT_PUB_CUSTOM_TOPIC "my-custom-topic/status"
 #define AWS_IOT_SUB_CUSTOM_TOPIC "my-custom-topic/set"
 
@@ -22,11 +24,20 @@ int app_topics_subscribe(void)
 {
 	int err;
 
-	// Connection made to AWS IoT Broker is using a persistent session. 
-	// This means the broker will store subscriptions. Any topic name 
+	// By default, connection made to AWS IoT Broker is using a persistent 
+	// session. This means the broker will store subscriptions. Any topic name 
 	// modifications may not become active until the persistant connection 
 	// session expiration time elapses.
 	// https://docs.aws.amazon.com/iot/latest/developerguide/mqtt.html#mqtt-persistent-sessions
+
+	// If modifing topic names, you may wish to temporary add the following
+	// to your prj.conf to create a clean session on each connection.
+	// CONFIG_MQTT_CLEAN_SESSION=y
+		
+	// If persistance sessions are enabled, on the nRF9160 console you should
+	// see the following statement after aws_iot_connect() is called.
+	//  AWS_IOT_EVT_CONNECTED
+	// *Persistent session enabled
 
 	const struct aws_iot_topic_data topics_list[APP_TOPICS_COUNT] = {
 		[0].str = AWS_IOT_SUB_CUSTOM_TOPIC,
@@ -34,6 +45,9 @@ int app_topics_subscribe(void)
 		// Additional topics can been appended here
 		// [1].str = custom_topic_2,
 		// [1].len = strlen(custom_topic_2)
+		// If extra topics are included, be sure to update 
+		// CONFIG_AWS_IOT_APP_SUBSCRIPTION_LIST_COUNT=x
+		// in your prj.conf
 	};
 
 	err = aws_iot_subscription_topics_add(topics_list, ARRAY_SIZE(topics_list));
@@ -320,5 +334,47 @@ void aws_iot_event_handler(const struct aws_iot_evt *const evt)
 		default:
 			printk("Unknown AWS IoT event type: %d\n", evt->type);
 			break;
+	}
+}
+
+void display_connect_results(int res)
+{
+	switch (res) {
+		case AWS_IOT_CONNECT_RES_SUCCESS:
+			break;
+
+		case AWS_IOT_CONNECT_RES_ERR_NOT_INITD:
+			break;
+
+		case AWS_IOT_CONNECT_RES_ERR_INVALID_PARAM:
+			break;
+
+		case AWS_IOT_CONNECT_RES_ERR_NETWORK:
+			break;
+
+		case AWS_IOT_CONNECT_RES_ERR_BACKEND:
+			break;
+
+		case AWS_IOT_CONNECT_RES_ERR_MISC:
+			break;
+
+		case AWS_IOT_CONNECT_RES_ERR_NO_MEM:
+			break;
+
+		case AWS_IOT_CONNECT_RES_ERR_PRV_KEY:
+			break;
+
+		case AWS_IOT_CONNECT_RES_ERR_CERT:
+			break;
+
+		case AWS_IOT_CONNECT_RES_ERR_CERT_MISC:
+			break;
+
+		case AWS_IOT_CONNECT_RES_ERR_TIMEOUT_NO_DATA:
+			break;
+
+		case AWS_IOT_CONNECT_RES_ERR_ALREADY_CONNECTED:
+			break;
+
 	}
 }
