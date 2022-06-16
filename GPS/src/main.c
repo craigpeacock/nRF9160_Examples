@@ -2,6 +2,7 @@
 #include <sys/printk.h>
 #include <modem/lte_lc.h>
 #include <nrf_modem_gnss.h>
+#include <modem/modem_info.h>
 
 static K_SEM_DEFINE(pvt_data_sem, 0, 1);
 
@@ -41,11 +42,21 @@ static void gnss_event_handler(int event)
 void main(void)
 {
 	int err;
+	char buf[80];
+	int len;
 
 	printk("\nnRF9160 GNSS Example (%s)\n", CONFIG_BOARD);
 
 	if (err = lte_lc_init()) {
 		printk("Failed initializing LTE Link controller, error: %d\n", err);
+	}
+
+	if (err = modem_info_init()) {
+		printk("MODEM: Failed initializing modem info module, error: %d\n", err);
+	}
+
+	if (modem_info_string_get(MODEM_INFO_FW_VERSION, buf, 80) > 0) {
+		printk("Modem FW Ver: %s\n",buf);
 	}
 
 	if (err = lte_lc_func_mode_set(LTE_LC_FUNC_MODE_ACTIVATE_GNSS)) {
