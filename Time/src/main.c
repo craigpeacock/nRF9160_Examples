@@ -160,7 +160,7 @@ void main(void)
 	// Zephyr RTOS keeps track of the UTC time only, it has no concept of local time. 
 	// Localtime support comes from the newlib c libraries.
 
-	// Exampe of how to Manually Set TimeZone. This could conceivably happen from
+	// Example of how to Manually Set TimeZone. This could conceivably happen from
 	// parsing the +CCLK? response.
 	putenv("TZ=GMT-9:30");
 	tzset();
