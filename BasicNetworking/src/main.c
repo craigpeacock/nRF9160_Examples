@@ -46,47 +46,9 @@ void print_modem_info(enum modem_info info)
 	len = modem_info_string_get(info, buf, 80);
 	if (len > 0) {
 		printk("%s\n",buf);
-    	//printk("%s (%d bytes)\n",buf,len);
 	} else {
 		printk("Error\n");
 	}
-}
-
-void print_UTC_time(void)
-{
-	// The Nordic Date-Time library will set the zephyr operating system time, 
-	// hence we can use standard POSIX functions to display time.
-	struct timespec tp;
-	struct tm timeinfo;
-	char buf[50];
-
-	if (clock_gettime(CLOCK_REALTIME, &tp) == 0) {
-		gmtime_r(&tp, &timeinfo);
-		printk("UTC Time: %s", asctime_r(&timeinfo, buf));
-	} else {
-		printk("Error obtaining time\n");
-	}
-}
-
-static void date_time_event_handler(const struct date_time_evt *evt)
-{
-	switch (evt->type) {
-		case DATE_TIME_OBTAINED_MODEM:
-			printk("Date/Time obtained from modem, ");
-			break;
-		case DATE_TIME_OBTAINED_NTP:
-			printk("Date/Time obtained from NTP, ");
-			break;
-		case DATE_TIME_OBTAINED_EXT:
-			printk("Date/Time externally set (manual/GPS), ");
-			break;
-		case DATE_TIME_NOT_OBTAINED:
-			printk("Date/Time unable to be obtained, ");
-			break;
-		default:
-			break;
-	}
-	print_UTC_time();
 }
 
 void main(void)
@@ -107,14 +69,7 @@ void main(void)
 
 	print_modem_info(MODEM_INFO_FW_VERSION);
 	print_modem_info(MODEM_INFO_IMEI);
-	//print_modem_info(MODEM_INFO_ICCID);
-	printk("\n");
-
-	// We have enabled CONFIG_DATE_TIME_MODEM (use modem as date/time source) and
-	// CONFIG_DATE_TIME_AUTO_UPDATE to trigger date-time update automatically when
-	// LTE is connected. The event handler will show when we be obtain a time fix.
-	date_time_register_handler(date_time_event_handler);
-
+	print_modem_info(MODEM_INFO_ICCID);
 
 	printk("Waiting for network... ");
 	err = lte_lc_init_and_connect();
@@ -125,8 +80,7 @@ void main(void)
 	printk("OK\n");
 	print_modem_info(MODEM_INFO_APN);
 	print_modem_info(MODEM_INFO_IP_ADDRESS);
-	//print_modem_info(MODEM_INFO_DATE_TIME);
-	//print_modem_info(MODEM_INFO_RSRP);
+	print_modem_info(MODEM_INFO_RSRP);
 
 	while (1) {
 
