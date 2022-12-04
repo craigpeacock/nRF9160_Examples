@@ -8,4 +8,4 @@ Basic example code for the [Nordic nRF9160 LTE-M/NB-IoT modem](https://www.nordi
 
 # Development Board
 
-* Firmware has been developed and tested on the [Lemon IoT - LTE nrf9160 board] (https://aaronmohtarco.myshopify.com/products/nrf9160-board)
+* Firmware has been developed and tested on the [Lemon IoT - LTE nrf9160 board](https://aaronmohtarco.myshopify.com/products/nrf9160-board)
