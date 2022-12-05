@@ -156,6 +156,8 @@ void main(void)
 	// We can fetch our own copy using:
 	err = nrf_modem_at_cmd(buf, 50, "AT+CCLK?");
 	if (err == 0) printf("Response %s\n",buf);
+	int cclk_tz = atoi(&buf[25]);
+	printf("AT+CCLK? Timezone Offset %d\n", cclk_tz);
 
 	// Zephyr RTOS keeps track of the UTC time only, it has no concept of local time. 
 	// Localtime support comes from the newlib c libraries.
@@ -203,7 +205,7 @@ void main(void)
 			// The timezone information from +CCLK is in quarters of an hour (900 
 			// seconds). We simply add or subtract the offset from the total number
 			// of seconds since epoch. 
-			tp.tv_sec += (38 * 900);
+			tp.tv_sec += (cclk_tz * 900);
 
 			gmtime_r(&tp, &timeinfo);
 			printk("Local Time: %s", asctime_r(&timeinfo, buf));
