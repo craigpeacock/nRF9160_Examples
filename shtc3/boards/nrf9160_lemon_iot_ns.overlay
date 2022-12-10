@@ -4,8 +4,32 @@
 // You can also visit the nRF DeviceTree extension documentation at 
 //  https://nrfconnect.github.io/vscode-nrf-connect/devicetree/nrfdevicetree.html
 
+&pinctrl {
+
+	i2c2_default: i2c2_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,
+				<NRF_PSEL(TWIM_SCL, 0, 31)>;
+				bias-pull-up;
+		};
+	};
+
+	i2c2_sleep: i2c2_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,
+				<NRF_PSEL(TWIM_SCL, 0, 31)>;
+			low-power-enable;
+		};
+	};
+};
+
 &i2c2 {
+	compatible = "nordic,nrf-twim";
 	status = "okay";
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-1 = <&i2c2_sleep>;
+	pinctrl-names = "default", "sleep";
+	clock-frequency = <100000>;
 	shtcx@70 {
 		compatible = "sensirion,shtcx";
 		label = "SHTC3";
