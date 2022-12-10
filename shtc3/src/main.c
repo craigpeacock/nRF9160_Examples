@@ -14,6 +14,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
+#include <stdio.h>
 
 void main(void)
 {
@@ -23,12 +24,12 @@ void main(void)
 
 	if (dev == NULL) {
 		printk("\nError: No devicetree node found for Sensirion SHTCx.\n");
-		return NULL;
+		return;
 	}
 
 	if (!device_is_ready(dev)) {
 		printf("Device %s is not ready\n", dev->name);
-		//return;
+		return;
 	}
 
 	printk("Found device %s. Reading sensor data\n", dev->name);
