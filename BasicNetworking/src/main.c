@@ -1,12 +1,11 @@
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/kernel.h>
 #include <modem/lte_lc.h>
 #include <modem/modem_info.h>
 #include <date_time.h>
 
-#include <posix/time.h>
-#include <posix/sys/time.h>
+#include <zephyr/posix/time.h>
+#include <zephyr/posix/sys/time.h>
 
 void print_modem_info(enum modem_info info)
 {
