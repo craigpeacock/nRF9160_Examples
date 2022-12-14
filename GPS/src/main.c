@@ -1,5 +1,5 @@
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
 #include <modem/lte_lc.h>
 #include <nrf_modem_gnss.h>
 #include <modem/modem_info.h>
@@ -43,27 +43,26 @@ void main(void)
 {
 	int err;
 	char buf[80];
-	int len;
 
 	printk("\nnRF9160 GNSS Example (%s)\n", CONFIG_BOARD);
 
-	if (err = lte_lc_init()) {
+	if ((err = lte_lc_init())) {
 		printk("Failed initializing LTE Link controller, error: %d\n", err);
 	}
 
-	if (err = modem_info_init()) {
+	if ((err = modem_info_init())) {
 		printk("MODEM: Failed initializing modem info module, error: %d\n", err);
 	}
 
-	if (modem_info_string_get(MODEM_INFO_FW_VERSION, buf, 80) > 0) {
+	if ((modem_info_string_get(MODEM_INFO_FW_VERSION, buf, 80) > 0)) {
 		printk("Modem FW Ver: %s\n",buf);
 	}
 
-	if (err = lte_lc_func_mode_set(LTE_LC_FUNC_MODE_ACTIVATE_GNSS)) {
+	if ((err = lte_lc_func_mode_set(LTE_LC_FUNC_MODE_ACTIVATE_GNSS))) {
 		printk("Failed enabling GNSS Functional Mode, error: %d\n", err);
 	}
 
-	if (err = nrf_modem_gnss_event_handler_set(gnss_event_handler)) {
+	if ((err = nrf_modem_gnss_event_handler_set(gnss_event_handler))) {
 		printk("Failed to set GNSS event handler, error: %d\n", err);
 	}
 
@@ -90,11 +89,11 @@ void main(void)
 #endif
 
 	// Enable low accuracy mode
-	if (err = nrf_modem_gnss_use_case_set(NRF_MODEM_GNSS_USE_CASE_LOW_ACCURACY)) {
+	if ((err = nrf_modem_gnss_use_case_set(NRF_MODEM_GNSS_USE_CASE_LOW_ACCURACY))) {
 		printk("Failed to set low accuracy mode, error %d\n",err);
 	}
 
-	if (err = nrf_modem_gnss_start() != 0) {
+	if ((err = nrf_modem_gnss_start() != 0)) {
 		printk("Failed to start GNSS, error %d\n",err);
 	}
 
@@ -126,7 +125,7 @@ void main(void)
 
 	}
 
-	if (err = nrf_modem_gnss_stop() != 0) {
+	if ((err = nrf_modem_gnss_stop() != 0)) {
 		printk("Failed to stop GNSS, error %d\n",err);
 	}
 }
