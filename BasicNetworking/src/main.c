@@ -3,9 +3,9 @@
 #include <modem/lte_lc.h>
 #include <modem/modem_info.h>
 #include <date_time.h>
-
 #include <zephyr/posix/time.h>
 #include <zephyr/posix/sys/time.h>
+#include "http_get.h"
 
 void print_modem_info(enum modem_info info)
 {
@@ -80,6 +80,10 @@ void main(void)
 	print_modem_info(MODEM_INFO_APN);
 	print_modem_info(MODEM_INFO_IP_ADDRESS);
 	print_modem_info(MODEM_INFO_RSRP);
+
+	struct addrinfo *res;
+	nslookup("www.youtube.com", &res);
+	print_addrinfo_results(&res);
 
 	while (1) {
 
