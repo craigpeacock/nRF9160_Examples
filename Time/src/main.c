@@ -1,12 +1,12 @@
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
 #include <modem/lte_lc.h>
 #include <modem/modem_info.h>
 #include <date_time.h>
 
-#include <posix/time.h>
-#include <posix/sys/time.h>
+#include <zephyr/posix/time.h>
+#include <zephyr/posix/sys/time.h>
 
 // Global variables used by the Newlib C Library Time Functions
 extern long _timezone;
@@ -100,6 +100,12 @@ void main(void)
 	char buf[50];
 
 	printk("\nnRF9160 Basic Networking Example (%s)\n", CONFIG_BOARD);
+
+	err = nrf_modem_lib_init();
+	if (err) {
+		printk("Modem initialization failed, err %d\n", err);
+		return 0;
+	}
 
 	err = lte_lc_init();
 	if (err) printk("MODEM: Failed initializing LTE Link controller, error: %d\n", err);
