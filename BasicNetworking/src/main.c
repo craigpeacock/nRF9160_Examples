@@ -56,6 +56,12 @@ void main(void)
 
 	printk("\nnRF9160 Basic Networking Example (%s)\n", CONFIG_BOARD);
 
+	err = nrf_modem_lib_init();
+	if (err) {
+		printk("Modem initialization failed, err %d\n", err);
+		return 0;
+	}
+
 	err = lte_lc_init();
 	if (err) printk("MODEM: Failed initializing LTE Link controller, error: %d\n", err);
 
