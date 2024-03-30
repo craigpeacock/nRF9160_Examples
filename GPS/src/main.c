@@ -67,9 +67,9 @@ int main(void)
 		printk("Failed to set GNSS event handler, error: %d\n", err);
 	}
 
-	// Set to 0 for Single fix mode. GNSS will switch off after valid
+	// Set to 0 for single fix mode. GNSS will switch off after valid
 	// fix or when fix_retry_set has been reached.
-	// Set to 1 for Continuous navigation. GNSS receiver to produce 
+	// Set to 1 for continuous navigation. GNSS receiver to produce
 	// PVT @ 1Hz
 	nrf_modem_gnss_fix_interval_set(1);
 	// Number of times to try for a fix
@@ -79,10 +79,10 @@ int main(void)
 #ifdef NMEA
 	/* Enable all supported NMEA messages. */
 	uint16_t nmea_mask = 	NRF_MODEM_GNSS_NMEA_RMC_MASK |
-				     		NRF_MODEM_GNSS_NMEA_GGA_MASK |
-			     			NRF_MODEM_GNSS_NMEA_GLL_MASK |
-			     			NRF_MODEM_GNSS_NMEA_GSA_MASK |
-			     			NRF_MODEM_GNSS_NMEA_GSV_MASK;
+							NRF_MODEM_GNSS_NMEA_GGA_MASK |
+							NRF_MODEM_GNSS_NMEA_GLL_MASK |
+							NRF_MODEM_GNSS_NMEA_GSA_MASK |
+							NRF_MODEM_GNSS_NMEA_GSV_MASK;
 
 	if (nrf_modem_gnss_nmea_mask_set(nmea_mask) != 0) {
 		printk("Failed to set GNSS NMEA mask\n");
@@ -100,9 +100,9 @@ int main(void)
 
 	while (1) {
 
-	    if (k_sem_take(&pvt_data_sem, K_NO_WAIT) != 0) {
-    	    //printk("Input data not available!");
-    	} else {
+		if (k_sem_take(&pvt_data_sem, K_NO_WAIT) != 0) {
+		//printk("Input data not available!");
+		} else {
 
 			if (pvt_data.flags && NRF_MODEM_GNSS_PVT_FLAG_FIX_VALID) {
 				printk("Latitude: %.06f Longitude: %.06f\n", pvt_data.latitude, pvt_data.longitude);
@@ -116,14 +116,13 @@ int main(void)
 						//printf("SV Number %d ", pvt_data.sv[i].sv);
 
 						//Flag is only set once we have a fix, and at that
-						//stage, this routine is no longer called.						
+						//stage, this routine is no longer called.
 						//if (pvt_data.sv[i].flags & NRF_MODEM_GNSS_SV_FLAG_USED_IN_FIX) fix++;
 					}
 				}
 				printk("Searching: Found %d SV\n",found);
 			}
-    	}
-
+		}
 	}
 
 	if ((err = nrf_modem_gnss_stop() != 0)) {
