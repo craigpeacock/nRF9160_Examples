@@ -1,4 +1,4 @@
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdlib.h>
 #if defined(CONFIG_NRF_MODEM_LIB)
@@ -15,15 +15,10 @@ void modem_configure(void)
 {
 	int err;
 
-	if (IS_ENABLED(CONFIG_LTE_AUTO_INIT_AND_CONNECT)) {
-		/* Do nothing, modem is already configured and LTE connected. */
-	} else {
-		err = lte_lc_init_and_connect_async(lte_handler);
-		if (err) {
-			printk("Modem could not be configured, error: %d\n",
-				err);
-			return;
-		}
+	err = lte_lc_connect_async(lte_handler);
+	if (err) {
+		printk("Modem could not be configured, err %d\n", err);
+		return;
 	}
 }
 

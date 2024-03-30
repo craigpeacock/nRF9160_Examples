@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
 
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdlib.h>
 #if defined(CONFIG_NRF_MODEM_LIB)
@@ -14,11 +14,12 @@
 #include <nrf_modem.h>
 #endif
 #include <net/aws_iot.h>
-#include <sys/reboot.h>
+#include <zephyr/sys/reboot.h>
 #include <date_time.h>
-#include <dfu/mcuboot.h>
+#include <zephyr/dfu/mcuboot.h>
 #include <cJSON.h>
 #include <cJSON_os.h>
+#include <hw_id.h>
 
 #include "datetime.h"
 #include "lte.h"
@@ -36,11 +37,11 @@ struct k_work shadow_update_version_work;
 
 bool cloud_connected;
 
-void main(void)
+static char hw_id[HW_ID_LEN];
+
+int main(void)
 {
 	int err;
-	char modem_IMEI[16];
-	struct aws_iot_config aws_config;
 
 	printk("The AWS IoT sample started, version: %s\n", CONFIG_APP_VERSION);
 
@@ -50,7 +51,7 @@ void main(void)
 	// Update. Check update status, if FW update has just occured.
 	nrf_modem_lib_dfu_handler();
 
-	// Initialise modem information module. Used to request battery voltage data 
+	// Initialise modem information module. Used to request battery voltage data
 	// from the modem
 	err = modem_info_init();
 	if (err) {
@@ -59,10 +60,13 @@ void main(void)
 
 	// Obtain the modems' IMEI (International Mobile Equipment Identity). We use
 	// this as the client ID (thing ID) when communicating with the AWS IoT Broker
-	int len = modem_info_string_get(MODEM_INFO_IMEI, modem_IMEI, 16);
-	if (len > 0) {
-		printk("IMEI: %s\n",modem_IMEI);
+	err = hw_id_get(hw_id, ARRAY_SIZE(hw_id));
+	if (err) {
+		printk("Failed to retrieve hardware ID, error: %d", err);
+		return err;
 	}
+
+	printk("IMEI: %s\n", hw_id);
 
 	// The AWS IOT Client ID should match the 'Thing Name' on the 
 	// AWS IoT console. It can be set in the prj.conf using: 
@@ -76,11 +80,8 @@ void main(void)
 	// In this case we read the modem's IMEI and use this as
 	// the Client ID.
 
-	aws_config.client_id = modem_IMEI;
-	aws_config.client_id_len = sizeof(modem_IMEI);
-
 	// Initialise Amazon Web Services IoT Module
-	err = aws_iot_init(&aws_config, aws_iot_event_handler);
+	err = aws_iot_init(aws_iot_event_handler);
 	if (err) {
 		printk("AWS IoT library could not be initialized, error: %d\n", err);
 	}
@@ -124,8 +125,12 @@ void connect_work_fn(struct k_work *work)
 		return;
 	}
 
+	const struct aws_iot_config config = {
+		.client_id = hw_id,
+	};
+
 	// Connect to AWS IoT broker (MQTT)
-	err = aws_iot_connect(NULL);
+	err = aws_iot_connect(&config);
 	if (err) {
 		printk("aws_iot_connect, error: %d\n", err);
 	}

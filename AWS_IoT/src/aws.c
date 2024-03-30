@@ -1,4 +1,4 @@
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <net/aws_iot.h>
@@ -8,8 +8,8 @@
 #include <nrf_modem.h>
 #include <cJSON.h>
 #include <cJSON_os.h>
-#include <sys/reboot.h>
-#include <dfu/mcuboot.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/dfu/mcuboot.h>
 #include <date_time.h>
 #include "json_support.h"
 #include "aws.h"
@@ -19,6 +19,9 @@
 
 #define AWS_IOT_PUB_CUSTOM_TOPIC "my-custom-topic/status"
 #define AWS_IOT_SUB_CUSTOM_TOPIC "my-custom-topic/set"
+
+#define MY_CUSTOM_TOPIC_1  "my-custom-topic/example"
+#define MY_CUSTOM_TOPIC_2  "my-custom-topic/example2"
 
 int app_topics_subscribe(void)
 {
@@ -39,18 +42,20 @@ int app_topics_subscribe(void)
 	//  AWS_IOT_EVT_CONNECTED
 	// *Persistent session enabled
 
-	const struct aws_iot_topic_data topics_list[APP_TOPICS_COUNT] = {
-		[0].str = AWS_IOT_SUB_CUSTOM_TOPIC,
-		[0].len = strlen(AWS_IOT_SUB_CUSTOM_TOPIC)
-		// Additional topics can been appended here
-		// [1].str = custom_topic_2,
-		// [1].len = strlen(custom_topic_2)
-		// If extra topics are included, be sure to update 
-		// CONFIG_AWS_IOT_APP_SUBSCRIPTION_LIST_COUNT=x
-		// in your prj.conf
+	static const struct mqtt_topic topic_list[] = {
+		{
+			.topic.utf8 = MY_CUSTOM_TOPIC_1,
+			.topic.size = strlen(MY_CUSTOM_TOPIC_1),
+			.qos = MQTT_QOS_1_AT_LEAST_ONCE,
+		},
+		{
+			.topic.utf8 = MY_CUSTOM_TOPIC_2,
+			.topic.size = strlen(MY_CUSTOM_TOPIC_2),
+			.qos = MQTT_QOS_1_AT_LEAST_ONCE,
+		}
 	};
 
-	err = aws_iot_subscription_topics_add(topics_list, ARRAY_SIZE(topics_list));
+	err = aws_iot_application_topics_set(topic_list, ARRAY_SIZE(topic_list));
 	if (err) {
 		printk("aws_iot_subscription_topics_add, error: %d\n", err);
 	}
@@ -208,7 +213,7 @@ void print_received_data(const char *buf, const char *topic, size_t topic_len)
 	}
 
 	printf("Data received from AWS IoT console:\nTopic: %.*s\nMessage: %s\n",
-	       topic_len, topic, str);
+		topic_len, topic, str);
 
 	cJSON_FreeString(str);
 
@@ -218,7 +223,7 @@ clean_exit:
 
 void process_received_data(const char *buf, const char *topic, size_t topic_len)
 {
-	// topic may not be null terminated, so need to use topic_len;	
+	// topic may not be null terminated, so need to use topic_len;
 	if(strncmp(topic, AWS_IOT_SUB_CUSTOM_TOPIC, topic_len) == 0) {
 		//printk("Found AWS_IOT_SUB_CUSTOM_TOPIC\n");
 		process_custom_topic(buf, topic, topic_len);
@@ -229,7 +234,7 @@ void process_custom_topic(const char *buf, const char *topic, size_t topic_len)
 {
 	// Parses a payload with the following format:
 	// {
-  	//		"reset": 1
+	//		"reset": 1
 	// }
 
 	cJSON *root_obj = NULL;
@@ -237,8 +242,8 @@ void process_custom_topic(const char *buf, const char *topic, size_t topic_len)
 
 	root_obj = cJSON_Parse(buf);
 	if (root_obj == NULL) {
-    	printk("cJSON Parse failure");
-    	return;
+		printk("cJSON Parse failure");
+		return;
 	}
 
 	if (cJSON_HasObjectItem(root_obj, "reset")) {
@@ -297,10 +302,6 @@ void aws_iot_event_handler(const struct aws_iot_evt *const evt)
 				printk("Requesting PSM failed, error: %d\n", err);
 			}
 #endif
-			break;
-
-		case AWS_IOT_EVT_READY:
-			printk("AWS_IOT_EVT_READY\n");
 			break;
 
 		case AWS_IOT_EVT_DISCONNECTED:
@@ -369,47 +370,5 @@ void aws_iot_event_handler(const struct aws_iot_evt *const evt)
 		default:
 			printk("Unknown AWS IoT event type: %d\n", evt->type);
 			break;
-	}
-}
-
-void display_connect_results(int res)
-{
-	switch (res) {
-		case AWS_IOT_CONNECT_RES_SUCCESS:
-			break;
-
-		case AWS_IOT_CONNECT_RES_ERR_NOT_INITD:
-			break;
-
-		case AWS_IOT_CONNECT_RES_ERR_INVALID_PARAM:
-			break;
-
-		case AWS_IOT_CONNECT_RES_ERR_NETWORK:
-			break;
-
-		case AWS_IOT_CONNECT_RES_ERR_BACKEND:
-			break;
-
-		case AWS_IOT_CONNECT_RES_ERR_MISC:
-			break;
-
-		case AWS_IOT_CONNECT_RES_ERR_NO_MEM:
-			break;
-
-		case AWS_IOT_CONNECT_RES_ERR_PRV_KEY:
-			break;
-
-		case AWS_IOT_CONNECT_RES_ERR_CERT:
-			break;
-
-		case AWS_IOT_CONNECT_RES_ERR_CERT_MISC:
-			break;
-
-		case AWS_IOT_CONNECT_RES_ERR_TIMEOUT_NO_DATA:
-			break;
-
-		case AWS_IOT_CONNECT_RES_ERR_ALREADY_CONNECTED:
-			break;
-
 	}
 }

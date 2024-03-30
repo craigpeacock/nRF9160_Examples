@@ -1,4 +1,4 @@
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <cJSON.h>
