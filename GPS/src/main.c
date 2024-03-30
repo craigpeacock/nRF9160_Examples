@@ -2,6 +2,7 @@
 #include <zephyr/sys/printk.h>
 #include <modem/lte_lc.h>
 #include <nrf_modem_gnss.h>
+#include <modem/nrf_modem_lib.h>
 #include <modem/modem_info.h>
 
 static K_SEM_DEFINE(pvt_data_sem, 0, 1);
@@ -29,8 +30,8 @@ static void gnss_event_handler(int event)
 			//printk("NRF_MODEM_GNSS_EVT_NMEA:\n");
 			break;
 
-		case NRF_MODEM_GNSS_EVT_AGPS_REQ:
-			printk("NRF_MODEM_GNSS_EVT_AGPS_REQ:\n");
+		case NRF_MODEM_GNSS_EVT_AGNSS_REQ:
+			printk("NRF_MODEM_GNSS_EVT_AGNSS_REQ:\n");
 			break;
 
 		default:
@@ -39,15 +40,15 @@ static void gnss_event_handler(int event)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 	char buf[80];
 
 	printk("\nnRF9160 GNSS Example (%s)\n", CONFIG_BOARD);
 
-	if ((err = lte_lc_init())) {
-		printk("Failed initializing LTE Link controller, error: %d\n", err);
+	if ((err = nrf_modem_lib_init())) {
+		printk("Failed initializing modem library, error: %d\n", err);
 	}
 
 	if ((err = modem_info_init())) {
