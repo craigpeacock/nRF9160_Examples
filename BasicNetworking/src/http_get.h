@@ -5,4 +5,5 @@
 
 void nslookup(const char * hostname, struct addrinfo **results);
 void print_addrinfo_results(struct addrinfo **results);
-void http_get(void);
+int connect_socket(struct zsock_addrinfo **results, uint16_t port);
+void http_get(int sock, char * hostname, char * url);

@@ -76,6 +76,8 @@ void print_modem_info(enum modem_info info)
 int main(void)
 {
 	int err;
+	int sock;
+	struct zsock_addrinfo *res;
 
 	printk("\nnRF9160 Basic Networking Example (%s)\n", CONFIG_BOARD);
 
@@ -109,19 +111,24 @@ int main(void)
 	print_modem_info(MODEM_INFO_IP_ADDRESS);
 	print_modem_info(MODEM_INFO_RSRP);
 
-	struct addrinfo *res;
-	nslookup("www.youtube.com", &res);
+	k_msleep(5000);
+
+	printk("\r\n");
+	printk("Looking up IP addresses\n");
+	nslookup("iot.beyondlogic.org", &res);
 	print_addrinfo_results(&res);
+		
+	printk("\r\n");
+	printk("Connecting to HTTP Server:\n");
+	sock = connect_socket(&res, 80);
+	http_get(sock, "iot.beyondlogic.org", "/LoremIpsum.txt");
+	zsock_close(sock);
 
 	while (1) {
-
-		/* 
+		/*
 		 * Do something here
-		 */ 
+		 */
 
 		k_msleep(1000);
 	}
-
 }
-
-
